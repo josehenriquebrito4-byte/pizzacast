@@ -337,23 +337,23 @@ async function buscarPedidos() {
 }
 
 async function processarResposta(json) {
-  const items = Array.isArray(json) ? json
+  const vendas = Array.isArray(json) ? json
     : (json.data || json.items || json.sales_items || json.results || []);
-  const campo = config.campoSabor || 'product_name';
+  const campo = config.campoSabor || 'desc_sale_item';
   const hoje = new Date().toISOString().split('T')[0];
-
-  // IDs já salvos no Supabase
   const idsExistentes = new Set(historico.map(r => r.saipos_id).filter(Boolean));
 
-  for (const item of items) {
-    const saiposId = String(item.id || item.sale_item_id || '');
-    if (saiposId && idsExistentes.has(saiposId)) continue;
-
-    const sabor = (item[campo] || item.name || item.description || 'Desconhecido').trim();
-    const qtd = parseInt(item.quantity || item.qty || 1);
-    const hora = item.created_at ? new Date(item.created_at).getHours() : new Date().getHours();
-
-    await salvarPedidoSupabase({ data: hoje, hora, sabor, qtd, saipos_id: saiposId });
+  for (const venda of vendas) {
+    const itensVenda = Array.isArray(venda.items) ? venda.items : [venda];
+    for (const item of itensVenda) {
+      const saiposId = String(item.id_sale_item || item.id || venda.id_sale || '');
+      if (saiposId && idsExistentes.has(saiposId)) continue;
+      const sabor = (item[campo] || item.desc_sale_item || item.description || item.name || venda[campo] || 'Desconhecido').trim();
+      const qtd = parseInt(item.quantity || item.qty || 1);
+      const horaStr = item.created_at || venda.created_at || '';
+      const hora = horaStr ? new Date(horaStr).getHours() : new Date().getHours();
+      await salvarPedidoSupabase({ data: hoje, hora, sabor, qtd, saipos_id: saiposId });
+    }
   }
 }
 
