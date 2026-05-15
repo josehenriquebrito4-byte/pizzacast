@@ -183,6 +183,11 @@
       </select>
     </div>
     <div class="config-card">
+      <label>URL do endpoint (edite aqui para testar)</label>
+      <input type="text" id="cfg-url" value="https://api.saipos.com/v1/sales_items" style="font-size:11px">
+      <div style="font-size:10px;color:var(--texto2);margin-top:6px">Troque o final da URL para testar endpoints diferentes</div>
+    </div>
+    <div class="config-card">
       <label>Campo do sabor na resposta da API</label>
       <input type="text" id="cfg-campo-sabor" value="product_name">
     </div>
@@ -241,6 +246,7 @@ function salvarConfig() {
   config.token = document.getElementById('cfg-token').value.trim();
   config.intervalo = parseInt(document.getElementById('cfg-intervalo').value);
   config.campoSabor = document.getElementById('cfg-campo-sabor').value.trim() || 'product_name';
+  config.url = document.getElementById('cfg-url').value.trim() || 'https://api.saipos.com/v1/sales_items';
   localStorage.setItem('pc_config', JSON.stringify(config));
   mostrarMsg('ok', '✓ Configuração salva!');
   iniciarPolling();
@@ -251,6 +257,7 @@ function carregarConfig() {
   if (config.token) document.getElementById('cfg-token').value = config.token;
   if (config.intervalo) document.getElementById('cfg-intervalo').value = config.intervalo;
   if (config.campoSabor) document.getElementById('cfg-campo-sabor').value = config.campoSabor;
+  if (config.url) document.getElementById('cfg-url').value = config.url;
 }
 
 // ─── INIT ─────────────────────────────────────────────────
@@ -500,13 +507,12 @@ function renderHistorico() {
 // ─── CONFIG ───────────────────────────────────────────────
 async function testarAPI() {
   const token = document.getElementById('cfg-token').value.trim();
+  const url = document.getElementById('cfg-url').value.trim();
   if (!token) { mostrarMsg('err','✗ Cole o token primeiro'); return; }
   document.getElementById('spinner-test').innerHTML = '<span class="spinner"></span>';
-  document.getElementById('cfg-raw').value = 'Testando...';
+  document.getElementById('cfg-raw').value = 'Testando ' + url + '...';
   try {
-    const hoje = new Date().toISOString().split('T')[0];
-    const res = await fetch(`https://api.saipos.com/v1/sales_items?per_page=10&date=${hoje}`,
-      { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' } });
+    const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' } });
     const txt = await res.text();
     document.getElementById('cfg-raw').value = `HTTP ${res.status}\n\n${txt}`;
     if (res.ok) { mostrarMsg('ok',`✓ Conectado! HTTP ${res.status}`); setStatus('ativo','Conectado'); }
